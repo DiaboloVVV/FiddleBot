@@ -1,10 +1,10 @@
 import discord
-from discord.utils import get
 from giveaway.main_giveaway import *
 from os import *
 import sys,traceback
 from discord.ext import commands
 from dotenv import load_dotenv
+from giveaway.main_giveaway import dbcreate
 # from stay_alive import keep_alive
 
 load_dotenv()
@@ -13,8 +13,9 @@ client = commands.Bot(command_prefix="!")
 
 def extFiles():
     extlist = next(os.walk('.'))[1]
-    if '.idea' in extlist:
+    if '.idea' in extlist and '.git' in extlist:
         extlist.pop(extlist.index('.idea'))
+        extlist.pop(extlist.index('.git'))
     return extlist
 
 
@@ -22,6 +23,7 @@ def extFiles():
 async def on_ready():
     await client.change_presence(activity=discord.Game('with ravens..'))
     print('Has been logged in as {0.user}'.format(client))
+    # dbcreate()
 
 
 @client.command()
@@ -73,4 +75,5 @@ if __name__ == '__main__':
             pass
     # fixupdate()
     # keep_alive()
-    client.run(os.environ['TOKEN'])
+    client.run('')
+    # client.run(os.environ['TOKEN'])
