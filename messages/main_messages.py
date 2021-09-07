@@ -9,6 +9,15 @@ class messages(commands.Cog):
         self.color = 0x1D474C
 
     @commands.command()
+    @commands.cooldown(1, 30, commands.BucketType.user)
+    async def ldumb(self, ctx):
+        if ctx.message.author == self.client.user:
+            return
+        if ctx.message.content == '$ldumb':
+            await ctx.channel.send('L DUMBLEDORE LOOL')
+
+
+    @commands.command()
     @commands.has_permissions(administrator=True)
     async def rules(self, ctx):
         channel = self.client.get_channel(836002072058265621)

@@ -1,46 +1,41 @@
-import sqlite3
-import os
-import os.path
-# paste giveaway functions from cogs.admin here
-import datetime
 import discord
 from discord.ext import commands
 from discord.utils import get
 import datetime
-from datetime import date, datetime, timedelta
+from datetime import date, timedelta
 import time
 import sched
 import calendar
 from dateutil import tz
 import asyncio
 import random
-
-from dotenv import load_dotenv
-
+import sqlite3
 import os
+import os.path
+
 
 class giveaway(commands.Cog):
 
     def __init__(self, client):
         self.client = client
         self.color = 0x1D474C
+        dbcreate()
 
     async def embedUpdate(self):
-        await self.client.wait_until_ready()
         counting = 0
-        message_id, message_channel_id, prize, time, sampleDate = dbembedupdate()
+        message_id, message_channel_id, prize, time, sampleDate, finished = dbembedupdate()
         while time > 0:
             await asyncio.sleep(600)
             time -= 600
             counting += 1
-            conn = sqlite3.connect('giveaway.db')
+            conn = sqlite3.connect('giveaway/giveaway.db')
             c = conn.cursor()
             c.execute("UPDATE giveaway_table SET timeseconds=? WHERE id=(SELECT max(id) FROM giveaway_table)", (time,))
             c.execute("SELECT * FROM giveaway_table WHERE id=(SELECT max(id) FROM giveaway_table)")
             print(c.fetchall())
             conn.commit()
             conn.close()
-            if counting == 6:
+            if counting == 3:
                 counting = 0
                 newEmbed = discord.Embed(
                     title=f"<:ebe:849286902174711881> TRY YOUR LUCK TO WIN: {prize}! <:ebecat:849286936375066624>",
@@ -58,15 +53,26 @@ class giveaway(commands.Cog):
 
         winner = random.choice(users)
         member = await new_msg.guild.fetch_member(winner.id)
-        role = get(member.guild.roles, name="giveaway-winner")
-        await member.add_roles(role)
+        # role = get(member.guild.roles, name="giveaway-winner")
+        # await member.add_roles(role)
 
         await channel.send(
             f"Congratulations {winner.mention} you have won!.\nYou have 24h to contact Administrators on # to get ur {prize}")
-
+        conn = sqlite3.connect('giveaway/giveaway.db')
+        c = conn.cursor()
         c.execute("UPDATE giveaway_table SET finished=1 WHERE id=(SELECT max(id) FROM giveaway_table)")
         conn.commit()
         conn.close()
+
+    @commands.command()
+    @commands.has_permissions(administrator=True)
+    async def remove(self, ctx):
+        dbdel()
+
+    @commands.command()
+    @commands.has_permissions(administrator=True)
+    async def greset(self, ctx):
+        givreset()
 
     @commands.command()
     @commands.has_permissions(administrator=True)
@@ -129,8 +135,7 @@ class giveaway(commands.Cog):
         #     text=f"Ends {ans[1]} from now!"
         # )
         end2 = datetime.datetime.utcnow()
-        end = end2 - datetime.timedelta(seconds=(3600 * 5)) + datetime.timedelta(seconds=time) - datetime.timedelta(
-            microseconds=end2.microsecond)
+        end = end2 - datetime.timedelta(seconds=(3600 * 5)) + datetime.timedelta(seconds=time) - datetime.timedelta(microseconds=end2.microsecond)
         embed = discord.Embed(
             title=f"<:ebe:849286902174711881> TRY YOUR LUCK TO WIN: {prize}! <:ebecat:849286936375066624>",
             description=f"\n| To participate in giveaway **REACT** with 🎉\n\n| Time remaining:  **{timeRemaning(time)}**",
@@ -150,7 +155,6 @@ class giveaway(commands.Cog):
         await my_msg.add_reaction("🎉")
 
         dbdata(my_msg.id, channel_id, prize, time, end)  # adding data to database
-
         await self.embedUpdate()
 
     @commands.command()
@@ -167,8 +171,8 @@ class giveaway(commands.Cog):
         users.pop(users.index(self.client.user))
         winner = random.choice(users)
         member = await new_msg.guild.fetch_member(winner.id)
-        role = get(member.guild.roles, name="giveaway-winner")
-        await member.add_roles(role)
+        # role = get(member.guild.roles, name="giveaway-winner")
+        # await member.add_roles(role)
         await channel.send(f"Congratulations! New winner of {prize} is {winner.mention}")
 
     @commands.command()
@@ -185,14 +189,14 @@ class giveaway(commands.Cog):
         users.pop(users.index(self.client.user))
         winner = random.choice(users)
         member = await new_msg.guild.fetch_member(winner.id)
-        role = get(member.guild.roles, name="giveaway-winner")
-        await member.add_roles(role)
+        # role = get(member.guild.roles, name="giveaway-winner")
+        # await member.add_roles(role)
         await channel.send(
             f"Congratulations {winner.mention} you have won!.\nYou have 24h to contact Administrators on # to get ur {prize}")
 
 
 def tableExists():  # checking if table exists
-    conn = sqlite3.connect('giveaway.db')
+    conn = sqlite3.connect('giveaway/giveaway.db')
     c = conn.cursor()
     check = c.execute(
         """SELECT count(*) FROM sqlite_master WHERE type='table' AND name='giveaway_table';"""
@@ -203,11 +207,11 @@ def tableExists():  # checking if table exists
 
 
 def creatingDB():
-    if os.path.isfile('giveaway.db'):
+    if os.path.isfile('giveaway/giveaway.db'):
         print('Database already exists!')
         return True
     else:
-        conn = sqlite3.connect('giveaway.db')
+        conn = sqlite3.connect('giveaway/giveaway.db')
         c = conn.cursor()
         c.execute("""
                     CREATE TABLE giveaway_table (
@@ -226,7 +230,7 @@ def creatingDB():
 
 def dbcreate():
     creatingDB()
-    conn = sqlite3.connect('giveaway.db')
+    conn = sqlite3.connect('giveaway/giveaway.db')
     c = conn.cursor()
     if not tableExists():
         c.execute("""
@@ -248,7 +252,7 @@ def dbcreate():
 
 
 def dbdata(message_id, message_channel_id, prize, seconds, time):
-    conn = sqlite3.connect('giveaway.db')
+    conn = sqlite3.connect('giveaway/giveaway.db')
     c = conn.cursor()
     c.execute(
         "INSERT INTO 'giveaway_table' ('id', 'message_id', 'message_channel_id', 'prize','timeseconds', 'sampleDate', 'finished') VALUES (NULL, ?,?,?,?,?,?)",
@@ -267,20 +271,20 @@ def dbdata(message_id, message_channel_id, prize, seconds, time):
 
 
 def dbembedupdate():
-    conn = sqlite3.connect('giveaway.db')
+    conn = sqlite3.connect('giveaway/giveaway.db')
     c = conn.cursor()
     c.execute(
-        "SELECT message_id,message_channel_id,prize,timeseconds, sampleDate FROM giveaway_table WHERE id=(SELECT max(id) FROM giveaway_table)"
+        "SELECT message_id,message_channel_id,prize,timeseconds, sampleDate, finished FROM giveaway_table WHERE id=(SELECT max(id) FROM giveaway_table)"
     )
-    message_id, message_channel_id, prize, timeseconds, sampleDate = c.fetchone(
+    message_id, message_channel_id, prize, timeseconds, sampleDate, finished = c.fetchone(
     )
     conn.commit()
     conn.close()
-    return message_id, message_channel_id, prize, timeseconds, sampleDate
+    return message_id, message_channel_id, prize, timeseconds, sampleDate, finished
 
 
 def dbinfo():
-    conn = sqlite3.connect('giveaway.db')
+    conn = sqlite3.connect('giveaway/giveaway.db')
     c = conn.cursor()
     c.execute(
         "SELECT message_id,prize FROM giveaway_table WHERE id=(SELECT max(id) FROM giveaway_table)"
@@ -292,7 +296,7 @@ def dbinfo():
 
 
 def givreset():
-    conn = sqlite3.connect('giveaway.db')
+    conn = sqlite3.connect('giveaway/giveaway.db')
     c = conn.cursor()
     c.execute("DELETE FROM giveaway_table")
     conn.commit()
@@ -301,7 +305,7 @@ def givreset():
 
 # insert correct timeseconds
 def fixupdate():
-    conn = sqlite3.connect('giveaway.db')
+    conn = sqlite3.connect('giveaway/giveaway.db')
     c = conn.cursor()
     c.execute(
         "UPDATE giveaway_table SET timeseconds=7800 WHERE id=(SELECT max(id) FROM giveaway_table)"
@@ -316,7 +320,7 @@ def fixupdate():
 
 #  153000
 # def givcheck():
-#     conn = sqlite3.connect('giveaway.db')
+#     conn = sqlite3.connect('giveaway/giveaway.db')
 #     c = conn.cursor()
 #     c.execute("SELECT finished FROM giveaway_table WHERE id=(SELECT max(id) FROM giveaway_table)")
 #     finished = c.fetchone()
@@ -332,8 +336,8 @@ def fixupdate():
 
 
 def dbdel():
-    if os.path.exists("giveaway.db"):
-        os.remove("giveaway.db")
+    if os.path.exists("giveaway/giveaway.db"):
+        os.remove("giveaway/giveaway.db")
         print("Database has been removed")
     else:
         print("The file doesn't exist")
