@@ -9,7 +9,7 @@ from giveaway.main_giveaway import dbcreate
 
 load_dotenv()
 
-client = commands.Bot(command_prefix="!")
+client = commands.Bot(command_prefix="$")
 
 def extFiles():
     extlist = next(os.walk('.'))[1]
@@ -75,5 +75,5 @@ if __name__ == '__main__':
             pass
     # fixupdate()
     # keep_alive()
-    client.run('')
-    # client.run(os.environ['TOKEN'])
+    # client.run('')
+    client.run(os.environ['TOKEN'])

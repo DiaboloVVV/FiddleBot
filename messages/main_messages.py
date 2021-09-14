@@ -366,6 +366,67 @@ class messages(commands.Cog):
         twitch_mess3.set_footer(text=f'If you want to be tagged as {toMention} go to #roles tab.')
         await channel.send(file=file, embed=twitch_mess3)
 
+    @commands.command()
+    @commands.has_permissions(administrator=True)
+    async def rangi(self,ctx):
+        ranks = {
+            'iron': '<:rankIron:886336986288357407>',
+            'bronze': '<:rankBronze:886336986099638312>',
+            'silver': '<:rankSilver:886336986359660644>',
+            'gold': '<:rankGold:886336986284175380>',
+            'plat': '<:rankPlatinium:886336986523267122>',
+            'diamond': '<:rankDiamond:886336986703613963>',
+            'master': '<:rnakMaster:886336986217070663>',
+            'grandmaster': '<:rankGrandMaster:886336986200281098>',
+            'chall': '<:rankChallenger:886336986166730762>'
+        }
+        rank_roles = {
+            'iron': get(ctx.guild.roles, id=887306807394050058),
+            'bronze': get(ctx.guild.roles, id=887307867185631232),
+            'silver': get(ctx.guild.roles, id=887308084156985394),
+            'gold': get(ctx.guild.roles, id=887308190423859251),
+            'plat': get(ctx.guild.roles, id=887308298506879026),
+            'diamond': get(ctx.guild.roles, id=887308386297851915),
+            'master': get(ctx.guild.roles, id=887308458725113886),
+            'grandmaster': get(ctx.guild.roles, id=887308522054905907),
+            'chall': get(ctx.guild.roles, id=690744184004542505)
+        }
+        staff = '<@&845339723575722013>'
+        lfg = self.client.get_channel(839943400848752670)
+        # <iron rank> Verify your rank! <chall rank> - title \
+        e = discord.Embed(title=f'<:ebecat:849286936375066624> Verify your rank! <:ebe:849286902174711881>',
+                          description="In order to acquire a role resembling "
+                                      "your **League of Legends rank**"
+                                      " **__react below__**."
+                          # f"Iron »» {iron}\n"
+                          # f"Bronze »» {bronze}\n"
+                          # f"Silver »» {silver}\n"
+                          # f"Gold »» {gold}\n"
+                          # f"Platinium »» {plat}\n"
+                          # f"Diamond »» {diamond}"
+                                      "\nIf your rank is **__Platinium or higher__**"
+                                      " please contact someone from an \n **administrator team -> "
+                                      f"{staff}** to verify your rank.\n"
+                                      "After verification __you'll get a role with your rank.__\n\n"
+                                      f"{ranks['iron']} **I**ron »»  {rank_roles['iron'].mention}\n"
+                                      f"{ranks['bronze']} **B**ronze »» {rank_roles['bronze'].mention}\n"
+                                      f"{ranks['silver']} **S**ilver  »»   {rank_roles['silver'].mention}\n"
+                                      f"{ranks['gold']} **G**old »»  {rank_roles['gold'].mention}\n"
+                                      f"{ranks['plat']} **P**latinium »»  {rank_roles['plat'].mention}\n"
+                                      f"{ranks['diamond']} **D**iamond »»  {rank_roles['diamond'].mention}\n"
+                                      f"{ranks['master']} **M**aster »»  {rank_roles['master'].mention}\n"
+                                      f"{ranks['grandmaster']} **G**rand**M**aster »»  {rank_roles['grandmaster'].mention}\n"
+                                      f"{ranks['chall']} **C**hallenger »»  {rank_roles['chall'].mention}\n"
+                                      "\n*Having rank role can help you* "
+                                      f"*in finding better duo partner in {lfg.mention}!*"
+                          , color=self.color)
+        msg = await ctx.channel.send(embed=e)
+        for key in ranks:
+            if key != 'plat':
+                await msg.add_reaction(ranks[key])
+            else:
+                break
+
 
 def setup(client):
     client.add_cog(messages(client))
